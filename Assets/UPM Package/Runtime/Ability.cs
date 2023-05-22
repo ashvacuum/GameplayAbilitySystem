@@ -52,40 +52,28 @@ namespace GAS
         }
     }
     
-    public abstract class SingleTargetAbility : Ability
+    public interface IPrefabSpawner
     {
-        [SerializeField] private GameObject _projectilePrefab;
-        
-        public virtual void Activate(GameObject caster, GameObject target)
-        {
-            // activate vfx
-        }
+        GameObject VfxPrefab { get; }
     }
     
-    public abstract class AoeAbility : Ability
+    public interface IActivateSkill
     {
-        [SerializeField] private GameObject _projectilePrefab;
-        
-        public virtual void Activate(GameObject caster, GameObject target)
-        {
-            //activate vfx
-        }
+        void Activate(Hero caster, Hero target);
     }
     
-    public class HealAndDamage : SingleTargetAbility
+    public abstract class SingleTargetAbility : Ability, IPrefabSpawner, IActivateSkill
     {
-        public float Damage
-        {
-            get => _damage;
-            set => _damage = value; // if this is negative this means that this heals
-        }
-        
-        [SerializeField] private float _damage;
-        
-        public override void Activate(GameObject caster, GameObject target)
-        {
-            // activate vfx
-            // apply damage
-        }
+        [SerializeField] private GameObject _vfxPrefab;
+
+        public GameObject VfxPrefab => _vfxPrefab;
+        public abstract void Activate(Hero caster, Hero target);
+    }
+
+    public abstract class AoeAbility : Ability, IPrefabSpawner, IActivateSkill
+    {
+        [SerializeField] private GameObject _vfxPrefab;
+        public GameObject VfxPrefab => _vfxPrefab;
+        public abstract void Activate(Hero caster, Hero target);
     }
 }

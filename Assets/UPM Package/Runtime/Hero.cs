@@ -9,9 +9,42 @@ namespace GAS
     [CreateAssetMenu(fileName = "New Hero", menuName = "GAS/Hero")]
     public class Hero : ScriptableObject
     {
-        public List<Ability> abilities = new List<Ability>();
-        public Dictionary<int, List<Talent>> talents = new Dictionary<int, List<Talent>>();
-        [SerializeField] private int _maxLevel = 1;
+        public List<Ability> Abilities => _abilities;
+
+        private List<Talent> GetTalents(int level)
+        {
+            level = Mathf.Min(level, _maxLevel);
+            
+            if(!_talents.ContainsKey(level))
+            {
+                _talents.Add(level, new List<Talent>());
+            }
+            return _talents[level];
+        }
+
+        private void AddTalent(int level, Talent talent)
+        {
+            var levelIndex = level - 1;
+            if (!_talents.ContainsKey(levelIndex))
+            {
+                _talents.Add(levelIndex, new List<Talent>());
+            }
+            _talents[levelIndex].Add(talent);
+        }
+
+        private void RemoveTalent(int level, Talent talent)
+        {
+            var levelIndex = level - 1;
+            if (!_talents.ContainsKey(levelIndex))
+            {
+                _talents.Add(levelIndex, new List<Talent>());
+            }
+            _talents[levelIndex].Remove(talent);
+        }
+        
+        private Dictionary<int, List<Talent>> _talents = new Dictionary<int, List<Talent>>();
+        private List<Ability> _abilities = new List<Ability>();
+        [SerializeField] private int _maxLevel = 30;
 
         public int MaxLevel
         {
@@ -21,11 +54,19 @@ namespace GAS
 
         private void OnEnable()
         {
-            if (abilities.Count == 0)
+            if (_abilities.Count == 0)
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    abilities.Add(null);
+                    _abilities.Add(null);
+                }
+            }
+
+            if (_talents.Count != _maxLevel || _talents.Count == 0)
+            {
+                for (var i = 0; i < _talents.Count; i++)
+                {
+                    _talents[i] = new List<Talent>();
                 }
             }
         }
@@ -44,20 +85,20 @@ namespace GAS
         [CustomEditor(typeof(Hero))]
         public class HeroEditor : UnityEditor.Editor
         {
-            private int selectedTab = 0;
-
             private SerializedProperty maxLevelProp;
 
             private SerializedProperty abilitiesProp;
             private List<Type> abilityTypes;
+            private bool[] showTalents;
+            
+            
 
             private void OnEnable()
             {
                 maxLevelProp = serializedObject.FindProperty("_maxLevel");
-                abilitiesProp = serializedObject.FindProperty("abilities");
-                abilityTypes = GetNonAbstractAbilityTypes();
+                showTalents = new bool[maxLevelProp.intValue];  
             }
-
+            
 
             public override void OnInspectorGUI()
             {
@@ -71,102 +112,90 @@ namespace GAS
 
                 EditorGUILayout.Space();
 
-                // Draw tabs
-                string[] tabOptions = {"Talents", "Abilities"};
-                selectedTab = GUILayout.Toolbar(selectedTab, tabOptions);
+                
 
                 EditorGUILayout.Space();
 
-                // Display content based on selected tab
-                switch (selectedTab)
-                {
-                    case 0:
-                        DrawTalents(hero);
-                        break;
-                    case 1:
-                        DrawAbilities(hero);
-                        break;
-                }
+                DrawTalents(hero);
+
             }
 
             private void DrawTalents(Hero hero)
             {
-                // Draw the talents using EditorGUILayout
-                // ...
-            }
+                GUILayout.Label("Talent Editor", EditorStyles.boldLabel);
 
-            private void DrawAbilities(Hero hero)
-            {
+                // Draw the table
+                GUILayout.Space(20f);
 
-                // Draw abilities section
-                EditorGUILayout.LabelField("Abilities", EditorStyles.boldLabel);
-                for (var i = 0; i < abilitiesProp.arraySize; i++)
+                for (var i = maxLevelProp.intValue; i > 0; i--)
                 {
-                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"Level {i} Talent", GUILayout.Width(80f));
 
-                    SerializedProperty abilityProp = abilitiesProp.GetArrayElementAtIndex(i);
-                    var ability =
-                        EditorUtility.InstanceIDToObject(abilityProp.objectReferenceInstanceIDValue);
-                    // Display ability field
-                    ability = EditorGUILayout.ObjectField(ability, typeof(Ability), false) as Ability;
-                    abilityProp.objectReferenceValue = ability;
-
-                    // Remove ability button
-                    if (GUILayout.Button("-", GUILayout.Width(20)))
+                    // Draw the "+" button to show/hide talents
+                    if (GUILayout.Button(showTalents[i - 1] ? "-" : "+", GUILayout.Width(20f)))
                     {
-                        abilitiesProp.DeleteArrayElementAtIndex(i);
-                        i--;
+                        showTalents[i - 1] = !showTalents[i - 1];
                     }
 
-                    EditorGUILayout.EndHorizontal();
-                }
+                    GUILayout.EndHorizontal();
 
-                // Add ability button
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("+", GUILayout.Width(30)))
-                {
-                    GenericMenu menu = new GenericMenu();
-
-                    // Create menu items for each non-abstract ability type
-                    foreach (Type abilityType in abilityTypes)
+                    // Check if talents should be shown for this ability
+                    if (showTalents[i - 1])
                     {
-                        menu.AddItem(new GUIContent(abilityType.Name), false, () => AddAbility(abilityType));
-                    }
+                        GUILayout.BeginVertical(EditorStyles.helpBox);
 
-                    menu.ShowAsContext();
-                }
+                        // Draw talents content here
+                        GUILayout.Label("Talents for Level " + i.ToString());
+                        
 
-                EditorGUILayout.EndHorizontal();
-
-                serializedObject.ApplyModifiedProperties();
-            }
-
-            private List<Type> GetNonAbstractAbilityTypes()
-            {
-                Type abilityType = typeof(Ability);
-                List<Type> nonAbstractTypes = new List<Type>();
-
-                // Get all non-abstract classes derived from Ability using reflection
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    foreach (var type in assembly.GetTypes())
-                    {
-                        if (abilityType.IsAssignableFrom(type) && !type.IsAbstract)
+                        foreach (var talent in hero.GetTalents(i - 1))
                         {
-                            nonAbstractTypes.Add(type);
+                            GUILayout.BeginVertical();
+        
+                            // Display talent properties
+                            talent.DrawCustomProperties(hero);
+                               
+                            GUILayout.BeginHorizontal();
+                            if (GUILayout.Button("Remove Talent"))
+                            {
+                                RemoveTalent(i, talent);
+                            }
+                            GUILayout.EndHorizontal();
+                            GUILayout.EndVertical();
                         }
+                        GUILayout.BeginHorizontal();
+                        // Add new talent button
+                        if (GUILayout.Button("Add Talent"))
+                        {
+                            AddNewTalent(i);
+                        }
+                        
+                        GUILayout.EndHorizontal();
+
+                        GUILayout.EndVertical();
                     }
                 }
-
-                return nonAbstractTypes;
             }
 
-            private void AddAbility(Type abilityType)
+            private void AddNewTalent(int level)
             {
-                Ability newAbility = ScriptableObject.CreateInstance(abilityType) as Ability;
-                abilitiesProp.arraySize++;
-                abilitiesProp.GetArrayElementAtIndex(abilitiesProp.arraySize - 1).objectReferenceValue = newAbility;
+                // Show a context menu to select the talent type
+                var talentMenu = new GenericMenu();
+                talentMenu.AddItem(new GUIContent("Cost Talent"), false, () => CreateTalent<CostTalent>(level));
+                talentMenu.AddItem(new GUIContent("Range Talent"), false, () => CreateTalent<RangeTalent>(level));
+                talentMenu.ShowAsContext();
+            }
+
+            private void CreateTalent<T>(int level) where T : Talent, new()
+            {
+                Talent newTalent = new T();
+                ((Hero)target).AddTalent(level,newTalent);
+            }
+
+            private void RemoveTalent(int level, Talent talent)
+            {
+                ((Hero)target).RemoveTalent(level, talent);
             }
         }
 
