@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using System.Linq;
 using GAS.Editor;
 
 namespace GAS
@@ -43,7 +44,7 @@ namespace GAS
         }
         
         private Dictionary<int, List<Talent>> _talents = new Dictionary<int, List<Talent>>();
-        private List<Ability> _abilities = new List<Ability>();
+        [SerializeField] private List<Ability> _abilities = new List<Ability>();
         [SerializeField] private int _maxLevel = 30;
 
         public int MaxLevel
@@ -90,7 +91,7 @@ namespace GAS
             private SerializedProperty abilitiesProp;
             private List<Type> abilityTypes;
             private bool[] showTalents;
-            
+            private int _currentTab = 0;
             
 
             private void OnEnable()
@@ -112,16 +113,28 @@ namespace GAS
 
                 EditorGUILayout.Space();
 
-                
+                _currentTab = GUILayout.Toolbar(_currentTab, new string[] { "Abilities", "Talents" });                
 
                 EditorGUILayout.Space();
+                
+                
 
-                DrawTalents(hero);
-
+                switch (_currentTab)
+                {
+                    case 0:
+                        DrawAbilities();
+                        break;
+                    case 1:
+                        DrawTalents();
+                        break;
+                        
+                }
             }
 
-            private void DrawTalents(Hero hero)
+            private void DrawTalents()
             {
+
+                var hero = (Hero)target;
                 GUILayout.Label("Talent Editor", EditorStyles.boldLabel);
 
                 // Draw the table
@@ -130,7 +143,7 @@ namespace GAS
                 for (var i = maxLevelProp.intValue; i > 0; i--)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label($"Level {i} Talent", GUILayout.Width(80f));
+                    GUILayout.Label($"Level {i} Talent", GUILayout.Width(120f));
 
                     // Draw the "+" button to show/hide talents
                     if (GUILayout.Button(showTalents[i - 1] ? "-" : "+", GUILayout.Width(20f)))
@@ -149,7 +162,7 @@ namespace GAS
                         GUILayout.Label("Talents for Level " + i.ToString());
                         
 
-                        foreach (var talent in hero.GetTalents(i - 1))
+                        foreach (var talent in hero.GetTalents(i - 1).ToList())
                         {
                             GUILayout.BeginVertical();
         
@@ -178,12 +191,27 @@ namespace GAS
                 }
             }
 
+            private void DrawAbilities()
+            {
+                var hero = target as Hero;
+                
+                
+                GUILayout.Label("Ability Editor", EditorStyles.boldLabel);
+
+                var abilitiesProperty = serializedObject.FindProperty("_abilities");
+
+                EditorGUILayout.PropertyField(abilitiesProperty, true);
+
+                serializedObject.ApplyModifiedProperties();
+            }
+
             private void AddNewTalent(int level)
             {
                 // Show a context menu to select the talent type
                 var talentMenu = new GenericMenu();
                 talentMenu.AddItem(new GUIContent("Cost Talent"), false, () => CreateTalent<CostTalent>(level));
                 talentMenu.AddItem(new GUIContent("Range Talent"), false, () => CreateTalent<RangeTalent>(level));
+                talentMenu.AddItem(new GUIContent("Damage VFX Talent"), false, () => CreateTalent<DamageVFXTalent>(level));
                 talentMenu.ShowAsContext();
             }
 

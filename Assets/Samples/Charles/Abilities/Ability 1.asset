@@ -9,13 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: SingleTarget Fire
-  m_EditorClassIdentifier: GAS:GAS.Skills:HealAndDamage
-  _name: FireAbility
+  m_Script: {fileID: 11500000, guid: a4f053378bb0f0b488a4921b1f8245fa, type: 3}
+  m_Name: Ability 1
+  m_EditorClassIdentifier: 
+  _name: Skill 1
   _description: New Ability Description
-  _cost: 50
-  _cooldown: 10
-  _range: 150
+  _cost: 0
+  _cooldown: 0
+  _range: 0
   _vfxPrefab: {fileID: 0}
-  _damage: 100
+  _damage: 0

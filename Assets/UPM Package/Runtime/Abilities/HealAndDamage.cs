@@ -20,8 +20,8 @@ namespace GAS.Skills
         
         public override void Activate(Hero hero, Hero target)
         {
-            // activate vfx
-            // apply damage
+            base.Activate(hero,target);
+            //TODO: add damage/heal logic
         }
     }
 }

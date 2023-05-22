@@ -12,4 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f577850092812848bf85e597471d098, type: 3}
   m_Name: Charles
   m_EditorClassIdentifier: 
+  _abilities:
+  - {fileID: 11400000, guid: 84b3d48198a13324180d13823450a912, type: 2}
+  - {fileID: 11400000, guid: 309a1205d0a36ad4e8fcbf5c0c8c37b0, type: 2}
+  - {fileID: 11400000, guid: 40f0349f730bcea43bdaa4884f1474ae, type: 2}
+  - {fileID: 11400000, guid: e70abdfc550049047b278e274d7c8a61, type: 2}
   _maxLevel: 30

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using GAS.Skills;
 using UnityEditor;
 using UnityEngine;
 
@@ -38,7 +39,7 @@ namespace GAS
         [SerializeField] protected int _levelRequirement;
         [SerializeField] protected Ability _modifiedAbility;
 
-        public abstract void ApplyModifier(Hero hero);
+        public abstract void ApplyModifier(Ability hero);
 
         public virtual void DrawCustomProperties(Hero hero)
         {
@@ -84,7 +85,7 @@ namespace GAS
         
         [SerializeField] private float _rangeModifier;
 
-        public override void ApplyModifier(Hero hero)
+        public override void ApplyModifier(Ability skill)
         {
             if(_modifiedAbility != null)
                 _modifiedAbility.Range *= _rangeModifier;
@@ -108,7 +109,7 @@ namespace GAS
         
         [SerializeField] private float _costModifier;
 
-        public override void ApplyModifier(Hero hero)
+        public override void ApplyModifier(Ability skill)
         {
             if(_modifiedAbility != null)
                 _modifiedAbility.Cost *= _costModifier;
@@ -118,6 +119,34 @@ namespace GAS
         {
             base.DrawCustomProperties(hero);
             _costModifier = EditorGUILayout.FloatField("Cost Modifier", _costModifier);
+        }
+    }
+
+    public class DamageVFXTalent : Talent
+    {
+        private float _damageModifier;
+        
+        public float DamageModifier
+        {
+            get { return _damageModifier; }
+            set { _damageModifier = value; }
+        }
+        
+        [SerializeField] private GameObject _damageVFX;
+        
+        public override void ApplyModifier(Ability skill)
+        {
+            if (_modifiedAbility == null || _modifiedAbility is not HealAndDamage healDamageSKill) return;
+            
+            healDamageSKill.Damage *= _damageModifier;
+            healDamageSKill.VfxPrefab = _damageVFX;
+        }
+
+        public override void DrawCustomProperties(Hero hero)
+        {
+            base.DrawCustomProperties(hero);
+            _damageModifier = EditorGUILayout.FloatField("Damage Modifier", _damageModifier);
+            _damageVFX = (GameObject) EditorGUILayout.ObjectField("Custom VFX", _damageVFX, typeof(GameObject), false);
         }
     }
     
